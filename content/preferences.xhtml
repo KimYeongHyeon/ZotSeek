@@ -9,6 +9,34 @@
 
 <!-- Dark Mode Support Styles -->
 <html:style>
+  #zotseek-group-models,
+  #zotseek-group-models groupbox {
+    min-width: 0;
+    max-width: 100%;
+  }
+  #zotseek-model-row {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    align-items: center;
+    min-width: 0;
+  }
+  #zotseek-pref-embeddingModel {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-inline: 0;
+  }
+  #zotseek-manageModels {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto !important;
+    min-width: 0;
+  }
+  #zotseek-manageModels > span:nth-child(4n+1),
+  #zotseek-manageModels > span:nth-child(4n+2) {
+    min-width: 0;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
   /* Use Zotero's CSS variables for theme-aware colors */
   #zotseek-preferences {
     --zotseek-text-primary: var(--fill-primary, #333);
@@ -203,7 +231,7 @@
 <!-- Embedding Model -->
 <groupbox>
   <label><html:h2 data-l10n-id="zotseek-pref-embeddingModelTitle">Embedding Model</html:h2></label>
-  <hbox align="center">
+  <hbox id="zotseek-model-row" align="center">
     <label value="Model:" style="min-width: 120px;" />
     <menulist id="zotseek-pref-embeddingModel" native="true">
       <menupopup/>
