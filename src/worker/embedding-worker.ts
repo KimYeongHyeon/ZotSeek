@@ -1,5 +1,5 @@
 /**
- * Embedding Worker - ChromeWorker for Transformers.js v3
+ * Embedding Worker - ChromeWorker for Transformers.js v4
  *
  * Parameterized by model config passed in the `init` message.
  * Runs in a ChromeWorker thread with privileged access.
@@ -25,8 +25,10 @@ if (typeof navigator === 'undefined') {
 const hasWebGPU = typeof navigator !== 'undefined' && 'gpu' in navigator;
 let useWebGPU = false; // Will be set after actual GPU adapter check
 
-// Import Transformers.js v3
-import { pipeline, env } from '@huggingface/transformers';
+// Import Transformers.js v4
+import { env } from '@huggingface/transformers';
+import { loadTextEmbedder } from './text-embedder';
+import { readEmbedding } from './embedding-output';
 
 // CRITICAL: Configure wasmPaths BEFORE any pipeline initialization
 env.backends.onnx.wasm.wasmPaths = 'chrome://zotseek/content/wasm/';
@@ -47,7 +49,7 @@ env.backends.onnx.wasm.numThreads = navigator.hardwareConcurrency || 4;
 postMessage({
   type: 'log',
   level: 'info',
-  message: 'Transformers.js v3 environment configured',
+  message: 'Transformers.js v4 environment configured',
   data: {
     wasmPaths: env.backends.onnx.wasm.wasmPaths,
     webGPUDetected: hasWebGPU,
@@ -65,6 +67,9 @@ let CURRENT: {
   hfPath: string;
   pooling: 'mean' | 'cls';
   normalize: boolean;
+  dimensions: number;
+  textOnly?: boolean;
+  dtype?: 'fp32' | 'fp16' | 'q8';
   queryPrefix: string;
   docPrefix: string;
   basePath: string;
@@ -72,11 +77,10 @@ let CURRENT: {
 } | null = null;
 
 const MODEL_OPTIONS = {
-  quantized: true,         // Use quantized model (~130MB)
-  // Every model in the registry ships only onnx/model_quantized.onnx, which
-  // maps to dtype 'q8' in Transformers.js v3 file naming. The legacy
+  // The existing text models ship onnx/model_quantized.onnx, which
+  // maps to dtype 'q8' in Transformers.js v4 file naming. The legacy
   // `quantized: true` flag covers the WASM path, but the WebGPU path ignores
-  // it and defaults to fp32 (onnx/model.onnx), a file we do not ship -- so
+  // it and defaults to fp32 (onnx/model.onnx), which those models do not ship -- so
   // the dtype must be explicit or GPU loading always fails.
   dtype: 'q8' as const,
   local_files_only: true,  // Only use local bundled files
@@ -194,11 +198,11 @@ async function initPipeline(): Promise<void> {
       // kernels for the integer-quantized matmuls, so they fall back to CPU
       // node-by-node with a GPU<->CPU transfer around each -- measured ~11x
       // SLOWER than plain WASM. GPU needs fp16 weights (model_fp16.onnx).
-      embeddingPipeline = await pipeline('feature-extraction', CURRENT.hfPath, {
+      embeddingPipeline = await loadTextEmbedder(CURRENT.hfPath, {
         ...MODEL_OPTIONS,
-        dtype: 'fp16',
+        dtype: CURRENT.dtype ?? 'fp16',
         device: 'webgpu',
-      });
+      }, CURRENT.textOnly);
 
       const loadTime = Date.now() - startTime;
       postMessage({
@@ -225,7 +229,9 @@ async function initPipeline(): Promise<void> {
 
   // WASM (CPU) fallback
   try {
-    embeddingPipeline = await pipeline('feature-extraction', CURRENT.hfPath, MODEL_OPTIONS);
+    embeddingPipeline = await loadTextEmbedder(CURRENT.hfPath, {
+      ...MODEL_OPTIONS, dtype: CURRENT.dtype ?? 'q8', device: 'wasm',
+    }, CURRENT.textOnly);
 
     const loadTime = Date.now() - startTime;
     postMessage({
@@ -301,8 +307,7 @@ async function generateEmbedding(jobId: string, text: string, kind: 'query' | 'd
       normalize: CURRENT.normalize,
     });
 
-    const embedding = Array.from(output.data as Float32Array);  // 768 dimensions
-    if (typeof output.dispose === 'function') output.dispose();  // pitfall #9: free WASM tensor
+    const embedding = readEmbedding(output, CURRENT.dimensions);
     const processingTimeMs = Date.now() - startTime;
 
     postMessage({

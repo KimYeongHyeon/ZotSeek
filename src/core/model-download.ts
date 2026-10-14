@@ -67,7 +67,20 @@ export async function findModelLocation(model: ModelConfig): Promise<ModelLocati
   for (const location of ['profile', 'legacy'] as ModelLocation[]) {
     const onnxPath = PathUtils.join(modelDir(model, location), ...model.onnxFile.split('/'));
     try {
-      if (await IOUtils.exists(onnxPath)) return location;
+      if (!(await IOUtils.exists(onnxPath))) continue;
+      // A small ONNX graph alone is not a usable model when its external weights are missing.
+      const required = model.textOnly
+        ? model.files.filter(file => file !== 'special_tokens_map.json')
+        : model.files.filter(file => file.endsWith('.onnx_data'));
+      let complete = true;
+      for (const file of required) {
+        const path = PathUtils.join(modelDir(model, location), ...file.split('/'));
+        if (!(await IOUtils.exists(path)) || (await IOUtils.stat(path)).size === 0) {
+          complete = false;
+          break;
+        }
+      }
+      if (complete) return location;
     } catch {
       // An unreadable path is treated as absent: this runs on the main thread
       // and the legacy directory may be a stalled network mount.
@@ -174,9 +187,9 @@ export function ensureModelsResourceSubstitution(): string | null {
 }
 
 /**
- * Returns true when the model's primary ONNX file is present on disk.
- * A model is considered "on disk" when the ONNX file exists; individual
- * JSON config files may still be absent (404 skip) without affecting this.
+ * Returns true when the graph and any external weights are present.
+ * Text-only multimodal models also require their tokenizer/config files.
+ * special_tokens_map.json remains optional because some repositories omit it.
  */
 export async function isModelOnDisk(model: ModelConfig): Promise<boolean> {
   if (model.runtime === 'server') return true; // nothing on disk; the server hosts the weights

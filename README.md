@@ -1,8 +1,14 @@
 # ZotSeek | AI-Powered Semantic Search & MCP Server for Zotero
 
+> **EmbeddingGemma 2 fork:** Download the XPI from [this fork’s Releases](https://github.com/KimYeongHyeon/ZotSeek/releases).
+> In ZotSeek settings, download and select **EmbeddingGemma 2 (multilingual, text)**, then run **Update Index**.
+> Text-only FP16 ONNX, about 575 MB including tokenizer, 768d, entirely local. Existing E5/Nomic indexes are retained.
+> [Verification and limitations](docs/EMBEDDINGGEMMA2-VERIFICATION.md).
+
+
 Find similar papers by **meaning**, not just keywords. 100% local, no data leaves your machine. Now with a built-in **MCP server** for AI agents.
 
-> **Status:** ✅ Stable release · Zotero 8, 9 & 10 · Transformers.js running locally
+> **Status:** Experimental ONNX fork (upstream: stable release) · Zotero 8, 9 & 10 · Transformers.js running locally
 >
 > **New:** 🤖 **MCP server built in** — Claude Code, Codex, and any MCP client can search your library and cite papers with links that open straight to the matched PDF page. Fully local, read-only, opt-in. [Set it up in one line →](docs/MCP.md)
 >
@@ -30,7 +36,7 @@ Find similar papers by **meaning**, not just keywords. 100% local, no data leave
 - 📍 **Passage-Level Location** - Jump to exact page & paragraph in Full Document mode
 - ✅ **Multi-Select in Results** - Select multiple search results, right-click to add to collections
 - 📁 **Save Results as Collection** - One click saves the full result set into a new Zotero collection so you can revisit the list later without re-running the search
-- 🧩 **Selectable Embedding Models** - Choose from 4 curated local models, including multilingual options; non-bundled models download once from Hugging Face to your machine
+- 🧩 **Selectable Embedding Models** - Choose from 5 curated local models, including multilingual options; non-bundled models download once from Hugging Face to your machine
 - 🖥️ **Local Inference Server (optional)** - Serve the embedding model from LM Studio, Ollama, llama.cpp or vLLM on the same machine for native GPU speed: OpenAI-compatible API, localhost only
 - 🔄 **Auto-Index** - Automatically index new papers when you add them to your library
 - 👥 **Group Libraries (opt-in)** - Extend indexing and search to your Zotero group libraries with the Index scope setting
@@ -366,6 +372,7 @@ Go to **Zotero → Settings → ZotSeek → Embedding Model** to pick the model 
 
 | Model | Dims | Multilingual | Approx. size | When to use |
 |-------|------|-------------|--------------|-------------|
+| **embeddinggemma-2** | 768 | Yes | ~575 MB | Text-only FP16 ONNX; multilingual paper search (this fork). |
 | **nomic-embed-text-v1.5** *(default, bundled)* | 768 | No | ~130 MB | English or mostly-English libraries. Strong all-around retrieval quality, no download needed. |
 | **paraphrase-multilingual-MiniLM-L12-v2** | 384 | Yes | ~135 MB | Smaller and faster; good for hardware-constrained machines or mixed-language collections where speed matters more than top accuracy. |
 | **multilingual-e5-base** | 768 | Yes | ~110 MB | Balanced multilingual quality at the same 768-dimension space as the default. Good first choice for non-English libraries. |
@@ -588,7 +595,7 @@ These are third-party projects, maintained by their authors and released under t
 
 **Requirements:** Zotero 8.0 or newer (Zotero 9 and Zotero 10 supported).
 
-1. Download the latest `zotseek-X.Y.Z.xpi` from the [Releases page](https://github.com/introfini/ZotSeek/releases/latest).
+1. Download the latest `zotseek-X.Y.Z.xpi` from the [Releases page](https://github.com/KimYeongHyeon/ZotSeek/releases).
 2. In Zotero, open **Tools → Plugins**.
 3. Click the gear icon (⚙️) in the top-right and choose **Install Plugin From File…**
 4. Select the downloaded `.xpi` file.

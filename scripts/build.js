@@ -72,53 +72,20 @@ function copyStaticFiles() {
   }
 }
 
-/**
- * Copy Transformers.js v3 WASM files from node_modules
- * These are needed for ONNX Runtime in the ChromeWorker
- */
-function copyTransformersV3Files() {
-  // Primary source: transformers.js dist folder
-  const transformersDir = path.resolve(__dirname, '../node_modules/@huggingface/transformers/dist');
-  // Fallback: onnxruntime-web nested in transformers
-  const ortDir = path.resolve(__dirname, '../node_modules/@huggingface/transformers/node_modules/onnxruntime-web/dist');
+/** Copy the WASM runtime paired with the installed Transformers.js dependency. */
+function copyTransformersFiles() {
+  const ortDir = path.dirname(require.resolve('onnxruntime-web'));
   const wasmDestDir = path.resolve(buildDir, 'content/wasm');
-  
-  // Ensure destination exists
   fs.mkdirSync(wasmDestDir, { recursive: true });
-  
-  // Files needed for v3 - ONNX Runtime WASM files
-  // v3 uses JSEP (JavaScript Execution Provider) variants
-  const v3Files = [
-    'ort-wasm-simd-threaded.jsep.mjs',
-    'ort-wasm-simd-threaded.jsep.wasm',
-    // Also copy the non-JSEP versions if available (for fallback)
-    'ort-wasm-simd-threaded.mjs',
-    'ort-wasm-simd-threaded.wasm',
-  ];
-  
-  let copiedCount = 0;
-  for (const file of v3Files) {
-    // Try transformers dist first, then onnxruntime-web
-    let srcPath = path.join(transformersDir, file);
-    if (!fs.existsSync(srcPath)) {
-      srcPath = path.join(ortDir, file);
-    }
-    
-    const destPath = path.join(wasmDestDir, file);
-    
-    if (fs.existsSync(srcPath)) {
-      fs.copyFileSync(srcPath, destPath);
-      console.log(`  Copied v3 WASM file: ${file}`);
-      copiedCount++;
-    } else {
-      console.warn(`  Warning: v3 WASM file not found: ${file}`);
-    }
-  }
-  
-  if (copiedCount > 0) {
-    console.log(`Copied ${copiedCount} Transformers.js v3 WASM files`);
-  } else {
-    console.warn('Warning: No v3 WASM files found. Make sure @huggingface/transformers is installed.');
+  for (const file of [
+    'ort-wasm-simd-threaded.jsep.mjs', 'ort-wasm-simd-threaded.jsep.wasm',
+    'ort-wasm-simd-threaded.mjs', 'ort-wasm-simd-threaded.wasm',
+    'ort-wasm-simd-threaded.asyncify.mjs', 'ort-wasm-simd-threaded.asyncify.wasm',
+    'ort-wasm-simd-threaded.jspi.mjs', 'ort-wasm-simd-threaded.jspi.wasm',
+  ]) {
+    // Never package the checked-in v3 runtime with the v4 worker.
+    fs.copyFileSync(path.join(ortDir, file), path.join(wasmDestDir, file));
+    console.log(`Copied ONNX runtime: ${file}`);
   }
 }
 
@@ -226,7 +193,7 @@ const collectionExportDialogBuildOptions = {
 async function build() {
   try {
     copyStaticFiles();
-    copyTransformersV3Files();
+    copyTransformersFiles();
 
     if (isWatch) {
       const ctx = await esbuild.context(buildOptions);

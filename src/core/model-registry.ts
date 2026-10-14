@@ -19,6 +19,8 @@ export interface ModelConfig {
   bundled: boolean;        // true only for the model shipped inside the XPI
   approxSizeMB: number;
   multilingual: boolean;
+  textOnly?: boolean;      // load only the text encoder of a multimodal ONNX model
+  dtype?: 'fp32' | 'fp16' | 'q8';
 
   // server-runtime only
   baseUrl?: string;          // e.g. 'http://127.0.0.1:1234' (loopback enforced at request time)
@@ -66,6 +68,17 @@ export const MODELS: ModelConfig[] = [
     onnxFile: 'onnx/model_quantized.onnx',
     files: [...COMMON_FILES, 'onnx/model_quantized.onnx'],
     bundled: false, approxSizeMB: 110, multilingual: true,
+  },
+  {
+    id: 'embeddinggemma-2',
+    label: 'EmbeddingGemma 2 (multilingual, text)',
+    runtime: 'onnx',
+    hfPath: 'onnx-community/embeddinggemma-2-ONNX',
+    dimensions: 768, pooling: 'mean', normalize: true,
+    queryPrefix: 'task: search result | query: ', docPrefix: 'title: none | text: ',
+    onnxFile: 'onnx/model_fp16.onnx',
+    files: [...COMMON_FILES, 'onnx/model_fp16.onnx_data', 'onnx/model_fp16.onnx'],
+    bundled: false, approxSizeMB: 575, multilingual: true, textOnly: true, dtype: 'fp16',
   },
   {
     id: 'bge-m3',

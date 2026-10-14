@@ -8,8 +8,8 @@ declare const Zotero: any;
 
 selfTest.register('task-37a-model-registry', async () => {
   return [
-    await scenario('registry has the four curated models', async () => {
-      assertEq(MODELS.length, 4);
+    await scenario('registry has the five curated models', async () => {
+      assertEq(MODELS.length, 5);
       assertTrue(getModel(DEFAULT_MODEL_ID), 'default model missing from registry');
     }),
     await scenario('only nomic is bundled', async () => {
