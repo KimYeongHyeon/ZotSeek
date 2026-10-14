@@ -23,4 +23,3 @@ export async function loadTextEmbedder(hfPath: string, options: any, textOnly = 
     return embedding;
   };
 }
-
