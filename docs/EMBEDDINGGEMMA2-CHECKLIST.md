@@ -7,6 +7,6 @@
 - [x] Run tests, typecheck and build the installable XPI.
 - [x] Run deterministic real-model smoke and compare the same input with Nomic.
 - [x] Inspect packaged worker/WASM identity and obtain independent review.
-- [ ] Save patch, XPI and verification report; fork/push if GitHub authentication permits.
+- [x] Save patch, XPI and verification report; fork/push if GitHub authentication permits.
 
 Scope: local ONNX text embeddings for the existing ZotSeek text/PDF chunking flow, 768 dimensions. Preserve installed ZotSeek and user indexes. No whole-library indexing is authorized. Runtime smoke uses fixed inputs (seed 42 where applicable), bounded to a few embeddings and durable logs.
